@@ -1,7 +1,10 @@
-import { initializeApp, getApps, FirebaseApp } from "firebase/app"
+import { initializeApp, getApps, FirebaseApp, getApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
 import { getDatabase } from "firebase/database"
+
+// Firebase app name - using a consistent name prevents duplicate app errors
+const APP_NAME = "waledapi-app";
 
 // Add a timestamp parameter to avoid URL caching
 const addTimestampToURL = (url: string | undefined): string | undefined => {
@@ -24,30 +27,28 @@ const firebaseConfig = {
 // Log firebase config (except for sensitive info)
 console.log("Firebase Config (Vercel):", { 
   hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ? "Set (with timestamp)" : "Not set",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+  appName: APP_NAME
 });
 
 // Initialize Firebase - safely handle potential duplicate initializations
 let firebaseApp: FirebaseApp;
 
-// Check if any Firebase apps have been initialized
-const apps = getApps();
-if (apps.length === 0) {
-  // No apps initialized yet, create a new one
+try {
+  // Check if app with this name already exists and get it
+  firebaseApp = getApp(APP_NAME);
+  console.log(`Using existing Firebase app with name: ${APP_NAME}`);
+} catch (error) {
+  // App doesn't exist yet, create a new one with our specific name
   try {
-    firebaseApp = initializeApp(firebaseConfig);
-    console.log("Firebase initialized successfully in", process.env.NODE_ENV, "environment!");
+    firebaseApp = initializeApp(firebaseConfig, APP_NAME);
+    console.log(`Firebase initialized successfully with name: ${APP_NAME} in ${process.env.NODE_ENV} environment!`);
   } catch (error: any) {
     console.error("Firebase initialization error:", error);
     throw new Error('Failed to initialize Firebase: ' + error.message);
   }
-} else {
-  // Use the existing app
-  firebaseApp = apps[0];
-  console.log("Using existing Firebase app");
 }
 
 // Initialize Firebase services
