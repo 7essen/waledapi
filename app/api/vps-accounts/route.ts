@@ -7,15 +7,28 @@ export async function GET(req: NextRequest) {
     const accountsRef = ref(database, 'vpsAccounts');
     const snapshot = await get(accountsRef);
 
-    if (snapshot.exists()) {
-      const accounts = snapshot.val();
-      return NextResponse.json(accounts);
-    } else {
-      console.log("No accounts found in database");
-      return NextResponse.json([]); // Return empty array if no accounts
-    }
+    // Create response with data
+    const response = NextResponse.json(
+      snapshot.exists() ? snapshot.val() : []
+    );
+
+    // Add cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+
+    return response;
   } catch (error) {
     console.error('Error fetching accounts:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      }
+    });
   }
 }

@@ -7,25 +7,32 @@ export async function GET(req: NextRequest) {
     const accountsRef = ref(database, 'vpsAccounts');
     const snapshot = await get(accountsRef);
 
-    if (snapshot.exists()) {
-      const accounts = snapshot.val();
-      
-      const vlessAccounts = [];
-      for (const id in accounts) {
-        // Try a case-insensitive match
-        if (accounts[id].type && accounts[id].type.toLowerCase() === 'vless') {
-          vlessAccounts.push(accounts[id]);
-        }
-      }
-      
-      console.log("Found VLESS accounts:", vlessAccounts.length);
-      return NextResponse.json(vlessAccounts);
-    } else {
-      console.log("No accounts found in database");
-      return NextResponse.json([]); // Return empty array if no accounts
-    }
+    // Create response with data
+    const response = NextResponse.json(
+      snapshot.exists() 
+        ? Object.values(snapshot.val()).filter((account: any) => 
+            account.type && account.type.toLowerCase() === 'vless'
+          )
+        : []
+    );
+
+    // Add cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+
+    return response;
   } catch (error) {
     console.error('Error fetching accounts:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      }
+    });
   }
 }
