@@ -1,36 +1,48 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/components/auth-provider"
+"use client";
 
-const inter = Inter({ subsets: ["latin"] })
+"use client";
 
-export const metadata: Metadata = {
-  title: "VPS Account Manager",
-  description: "Manage your VPS accounts securely",
-    generator: 'v0.dev'
-}
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import LoginForm from "@/components/login-form";
+import { useState, useEffect } from "react";
+import DashboardHeader from "@/components/dashboard-header";
+
+const inter = Inter({ subsets: ["latin"], display: "fallback" });
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>{children}</AuthProvider>
-          <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="theme"
+        >
+          {isLoading ? null : (
+            <>
+              {isLoggedIn && <DashboardHeader setIsLoggedIn={setIsLoggedIn} />}
+              {isLoggedIn ? children : <LoginForm setIsLoggedIn={setIsLoggedIn} />}
+            </>
+          )}
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
-
-
-
-import './globals.css'

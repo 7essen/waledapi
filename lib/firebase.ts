@@ -1,28 +1,38 @@
 import { initializeApp, getApps } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
+import { getDatabase } from "firebase/database"
 
-// Your web app's Firebase configuration
+// Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDRNcrIOz8mUHRqQk4d_JUualOIIBc9w4E",
-  authDomain: "waledpro-f.firebaseapp.com",
-  databaseURL: "https://waledpro-f-default-rtdb.firebaseio.com",
-  projectId: "waledpro-f",
-  storageBucket: "waledpro-f.firebasestorage.app",
-  messagingSenderId: "289358660533",
-  appId: "1:289358660533:web:8cff3ff3a9759e6f990ffc",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 }
 
 // Initialize Firebase
-let app
+let firebaseApp
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig)
+  try {
+    firebaseApp = initializeApp(firebaseConfig)
+    console.log("Firebase initialized successfully!")
+  } catch (error: any) {
+    console.error("Firebase initialization error:", error)
+    throw new Error('Failed to initialize Firebase: ' + error.message)
+  }
 } else {
-  app = getApps()[0] // if already initialized, use that one
+  firebaseApp = getApps()[0] // if already initialized, use that one
 }
 
-const db = getFirestore(app)
-const auth = getAuth(app)
+const db = getFirestore(firebaseApp)
+const auth = getAuth(firebaseApp)
 
-export { app, db, auth }
+// Get database instance
+const database = getDatabase(firebaseApp)
+
+export { firebaseApp, db, auth, database }
 

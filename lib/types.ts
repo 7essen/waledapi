@@ -9,5 +9,5 @@ export type VpsAccount = {
   status: "active" | "inactive"
   createdAt: number
   updatedAt: number
+  config?: string
 }
-

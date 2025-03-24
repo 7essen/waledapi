@@ -33,11 +33,23 @@ const firebaseConfig = {
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN"]),
-  ip_address: z.string().min(1, "IP address is required"),
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-  expiry_date: z.string().min(1, "Expiry date is required"),
+  ip_address: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  expiry_date: z.string().optional(),
+  config: z.string().optional(),
   status: z.enum(["active", "inactive"]),
+}).refine(data => {
+  if (data.type === "SSH") {
+    return data.ip_address && data.username && data.password && data.expiry_date
+  }
+  if (data.type === "VLESS" || data.type === "TROJAN") {
+    return data.config
+  }
+  return true
+}, {
+  message: "Required fields are missing based on the selected type",
+  path: ["ip_address", "username", "password", "expiry_date", "config"]
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -48,12 +60,11 @@ interface AddVpsAccountDialogProps {
   userId?: string
   onAccountAdded?: (accountId: string) => void
 }
-
 export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAccountAdded }: AddVpsAccountDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<string[]>([])
-  const [isSuccess, setIsSuccess] = useState(false)
-  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const { toast } = useToast();
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,22 +75,19 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       password: "",
       expiry_date: new Date().toISOString().split("T")[0],
       status: "active",
+      config: ""
     },
-  })
-
+  });
   const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true)
-    setDebugInfo(["Starting submission process..."])
-    setIsSuccess(false)
+    setIsSubmitting(true);
+    setIsSuccess(false);
 
     try {
       // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig)
-      setDebugInfo((prev) => [...prev, "Firebase initialized successfully"])
+      const app = initializeApp(firebaseConfig);
 
       // Use Realtime Database instead of Firestore
-      const database = getDatabase(app)
-      setDebugInfo((prev) => [...prev, "Realtime Database initialized"])
+      const database = getDatabase(app);
 
       // Create a new account object
       const newAccount = {
@@ -87,51 +95,47 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         userId: userId || "anonymous",
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      }
-
-      setDebugInfo((prev) => [...prev, "Account object created, attempting to write to Realtime Database..."])
+      };
 
       // Write to Realtime Database
-      const accountsRef = ref(database, "vpsAccounts")
-      const newAccountRef = push(accountsRef)
+      const accountsRef = ref(database, "vpsAccounts");
+      const newAccountRef = push(accountsRef);
 
-      await set(newAccountRef, newAccount)
+      await set(newAccountRef, newAccount);
 
-      const newAccountId = newAccountRef.key
-      setDebugInfo((prev) => [...prev, `Write successful - Key: ${newAccountId}`])
+      const newAccountId = newAccountRef.key;
 
       // Set success state
-      setIsSuccess(true)
+      setIsSuccess(true);
 
       // Call the callback if it exists
       if (onAccountAdded && newAccountId) {
-        onAccountAdded(newAccountId)
+        onAccountAdded(newAccountId);
       }
 
       toast({
         title: "Account added",
         description: "VPS account has been added successfully.",
-      })
+      });
 
       // Don't close the dialog immediately to show success state
       setTimeout(() => {
-        form.reset()
-        onOpenChange(false)
-        setIsSuccess(false)
-      }, 2000)
+        form.reset();
+        onOpenChange(false);
+        setIsSuccess(false);
+      }, 2000);
     } catch (error: any) {
-      console.error("Error adding account:", error)
-      setDebugInfo((prev) => [...prev, `Error: ${error.message}`])
+      console.error("Error adding account:", error);
 
       toast({
         title: "Error",
         description: `Failed to add VPS account: ${error.message}`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog
@@ -196,7 +200,6 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="status"
@@ -218,73 +221,83 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
                       </FormItem>
                     )}
                   />
+
                 </div>
+                {form.watch("type") === "SSH" && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="ip_address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>IP Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="192.168.1.1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="ip_address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>IP Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="192.168.1.1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input placeholder="username" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="expiry_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Expiry Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {(form.watch("type") === "VLESS" || form.watch("type") === "TROJAN") && (
                   <FormField
                     control={form.control}
-                    name="username"
+                    name="config"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>Config</FormLabel>
                         <FormControl>
-                          <Input placeholder="username" {...field} />
+                          <Input placeholder="Configuration URL" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="expiry_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expiry Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {debugInfo.length > 0 && (
-                  <div className="p-2 bg-muted/20 rounded text-xs space-y-1 max-h-32 overflow-y-auto">
-                    <p className="font-medium">Debug Info:</p>
-                    {debugInfo.map((info, i) => (
-                      <p key={i}>{info}</p>
-                    ))}
-                  </div>
                 )}
 
                 <DialogFooter>
@@ -301,6 +314,6 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 

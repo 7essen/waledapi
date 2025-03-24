@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, onValue } from "firebase/database"
 import type { VpsAccount } from "@/lib/types"
-import DashboardHeader from "@/components/dashboard-header"
 import VpsAccountsList from "@/components/vps-accounts-list"
 import AddVpsAccountDialog from "@/components/add-vps-account-dialog"
 import { Button } from "@/components/ui/button"
@@ -24,73 +23,72 @@ const firebaseConfig = {
 }
 
 export default function Dashboard() {
-  const { user, loading } = useAuth()
-  const [accounts, setAccounts] = useState<VpsAccount[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [newAccountId, setNewAccountId] = useState<string | null>(null)
+  const { user, loading } = useAuth();
+  const [accounts, setAccounts] = useState<VpsAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [newAccountId, setNewAccountId] = useState<string | null>(null);
 
   // Add a function to handle new account creation
   const handleAccountAdded = (accountId: string) => {
-    setNewAccountId(accountId)
+    setNewAccountId(accountId);
     // Clear the new account highlight after 5 seconds
     setTimeout(() => {
-      setNewAccountId(null)
-    }, 5000)
-  }
+      setNewAccountId(null);
+    }, 5000);
+  };
 
   useEffect(() => {
     try {
       // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig)
-      const database = getDatabase(app)
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
 
       // Reference to vpsAccounts in Realtime Database
-      const accountsRef = ref(database, "vpsAccounts")
+      const accountsRef = ref(database, "vpsAccounts");
 
       // Listen for changes
       const unsubscribe = onValue(
         accountsRef,
         (snapshot) => {
-          const accountsData: VpsAccount[] = []
+          const accountsData: VpsAccount[] = [];
 
           if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
-              const account = childSnapshot.val()
+              const account = childSnapshot.val();
               accountsData.push({
                 id: childSnapshot.key,
                 ...account,
-              })
-            })
+              });
+            });
 
             // Sort by createdAt in descending order
-            accountsData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+            accountsData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           }
 
-          setAccounts(accountsData)
-          setIsLoading(false)
+          setAccounts(accountsData);
+          setIsLoading(false);
         },
         (error) => {
-          console.error("Database error:", error)
-          setError(`Database error: ${error.message}`)
-          setIsLoading(false)
+          console.error("Database error:", error);
+          setError(`Database error: ${error.message}`);
+          setIsLoading(false);
         },
-      )
+      );
 
       return () => {
         // No need to unsubscribe as onValue doesn't return an unsubscribe function
-      }
+      };
     } catch (err: any) {
-      console.error("Firebase initialization error:", err)
-      setError(`Failed to initialize database: ${err.message}`)
-      setIsLoading(false)
+      console.error("Firebase initialization error:", err);
+      setError(`Failed to initialize database: ${err.message}`);
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader />
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">VPS Accounts</h1>
@@ -124,6 +122,5 @@ export default function Dashboard() {
         />
       </main>
     </div>
-  )
+  );
 }
-

@@ -1,85 +1,56 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, onValue } from "firebase/database"
 import type { VpsAccount } from "@/lib/types"
 import DashboardHeader from "@/components/dashboard-header"
 import VpsAccountsList from "@/components/vps-accounts-list"
 import AddVpsAccountDialog from "@/components/add-vps-account-dialog"
 import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
-import { useAuth } from "@/components/auth-provider"
+import { PlusCircle } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { Card, CardContent } from "@/components/ui/card";
 
-// Direct Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDRNcrIOz8mUHRqQk4d_JUualOIIBc9w4E",
-  authDomain: "waledpro-f.firebaseapp.com",
-  databaseURL: "https://waledpro-f-default-rtdb.firebaseio.com",
-  projectId: "waledpro-f",
-  storageBucket: "waledpro-f.firebasestorage.app",
-  messagingSenderId: "289358660533",
-  appId: "1:289358660533:web:8cff3ff3a9759e6f990ffc",
-}
+// Direct Firebase config is no longer needed here
 
 export default function Dashboard() {
-  const { user, loading } = useAuth()
-  const [accounts, setAccounts] = useState<VpsAccount[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { user, loading } = useAuth();
+  const [accounts, setAccounts] = useState<VpsAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Add state for isLoggedIn
 
   useEffect(() => {
-    try {
-      // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig)
-      const database = getDatabase(app)
+      const fetchAccounts = async () => {
+        try {
+          const responses = await Promise.all([
+            fetch("/api/ssh"),
+            fetch("/api/vless"),
+            fetch("/api/trojan"),
+          ]);
 
-      // Reference to vpsAccounts in Realtime Database
-      const accountsRef = ref(database, "vpsAccounts")
+          const data = await Promise.all(responses.map((res) => res.json()));
 
-      // Listen for changes
-      const unsubscribe = onValue(
-        accountsRef,
-        (snapshot) => {
-          const accountsData: VpsAccount[] = []
+          const allAccounts = data.flat();
 
-          if (snapshot.exists()) {
-            snapshot.forEach((childSnapshot) => {
-              const account = childSnapshot.val()
-              accountsData.push({
-                id: childSnapshot.key,
-                ...account,
-              })
-            })
+          // Sort by createdAt in descending order
+          allAccounts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-            // Sort by createdAt in descending order
-            accountsData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-          }
+          setAccounts(allAccounts);
+        } catch (error: any) {
+          console.error("Error fetching accounts:", error);
+          setError(`Failed to fetch accounts: ${error.message}`);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-          setAccounts(accountsData)
-          setIsLoading(false)
-        },
-        (error) => {
-          console.error("Database error:", error)
-          setError(`Database error: ${error.message}`)
-          setIsLoading(false)
-        },
-      )
-
-      return () => {
-        unsubscribe()
-      }
-    } catch (err: any) {
-      console.error("Firebase initialization error:", err)
-      setError(`Failed to initialize database: ${err.message}`)
-      setIsLoading(false)
-    }
-  }, [])
+      fetchAccounts();
+    }, [])
 
   return (
     <div className="min-h-screen bg-white">
-      <DashboardHeader />
+      <DashboardHeader setIsLoggedIn={setIsLoggedIn} />
       <main className="container mx-auto px-4 py-8 mt-10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">VPS Accounts</h1>
@@ -90,14 +61,26 @@ export default function Dashboard() {
         </div>
 
         {error ? (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6">
-            <p>{error}</p>
-            <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
-              Retry Connection
-            </Button>
-          </div>
+          <Card>
+            <CardContent>
+              <div className="bg-destructive/10 text-destructive p-4 rounded-md">
+                <p>{error}</p>
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry Connection
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
-          <VpsAccountsList accounts={accounts} isLoading={isLoading} />
+          <Card>
+            <CardContent>
+              <VpsAccountsList accounts={accounts} isLoading={isLoading} />
+            </CardContent>
+          </Card>
         )}
 
         <AddVpsAccountDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} userId={user?.uid} />
@@ -105,4 +88,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
