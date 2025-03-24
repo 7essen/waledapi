@@ -1,7 +1,7 @@
-import { initializeApp, getApps } from "firebase/app"
+import { initializeApp, getApps, FirebaseApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
-import { getDatabase, connectDatabaseEmulator } from "firebase/database"
+import { getDatabase } from "firebase/database"
 
 // Add a timestamp parameter to avoid URL caching
 const addTimestampToURL = (url: string | undefined): string | undefined => {
@@ -30,30 +30,39 @@ console.log("Firebase Config (Vercel):", {
   environment: process.env.NODE_ENV
 });
 
-// Initialize Firebase
-let firebaseApp
-if (!getApps().length) {
+// Initialize Firebase - safely handle potential duplicate initializations
+let firebaseApp: FirebaseApp;
+
+// Check if any Firebase apps have been initialized
+const apps = getApps();
+if (apps.length === 0) {
+  // No apps initialized yet, create a new one
   try {
-    firebaseApp = initializeApp(firebaseConfig)
-    console.log("Firebase initialized successfully in", process.env.NODE_ENV, "environment!")
+    firebaseApp = initializeApp(firebaseConfig);
+    console.log("Firebase initialized successfully in", process.env.NODE_ENV, "environment!");
   } catch (error: any) {
-    console.error("Firebase initialization error:", error)
-    throw new Error('Failed to initialize Firebase: ' + error.message)
+    console.error("Firebase initialization error:", error);
+    throw new Error('Failed to initialize Firebase: ' + error.message);
   }
 } else {
-  firebaseApp = getApps()[0] // if already initialized, use that one
+  // Use the existing app
+  firebaseApp = apps[0];
+  console.log("Using existing Firebase app");
 }
 
-const db = getFirestore(firebaseApp)
-const auth = getAuth(firebaseApp)
+// Initialize Firebase services
+const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
+const database = getDatabase(firebaseApp);
 
-// Get database instance
-const database = getDatabase(firebaseApp)
-
-// Configure database for non-caching
+// Configure database for non-caching on client-side only
 if (typeof window !== 'undefined') {
-  database.app.options.databaseURL = addTimestampToURL(database.app.options.databaseURL);
+  try {
+    database.app.options.databaseURL = addTimestampToURL(database.app.options.databaseURL);
+  } catch (error) {
+    console.warn("Could not add timestamp to database URL:", error);
+  }
 }
 
-export { firebaseApp, db, auth, database }
+export { firebaseApp, db, auth, database };
 
