@@ -1,7 +1,7 @@
 import { initializeApp, getApps, FirebaseApp, getApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
-import { getDatabase } from "firebase/database"
+import { getDatabase, connectDatabaseEmulator } from "firebase/database"
 
 // Firebase app name - using a consistent name prevents duplicate app errors
 const APP_NAME = "waledapi-app";
@@ -21,7 +21,9 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  // Disable database persistence to avoid caching issues
+  databaseAuthVariableOverride: { disableCache: true }
 }
 
 // Log firebase config (except for sensitive info)
@@ -30,7 +32,8 @@ console.log("Firebase Config (Vercel):", {
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ? "Set (with timestamp)" : "Not set",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   environment: process.env.NODE_ENV,
-  appName: APP_NAME
+  appName: APP_NAME,
+  disableCache: true
 });
 
 // Initialize Firebase - safely handle potential duplicate initializations
@@ -56,12 +59,24 @@ const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 const database = getDatabase(firebaseApp);
 
+// Database configuration for real-time data
+const dbConfig = {
+  // These settings help ensure we always get fresh data
+  synchronizeTabs: false, // Don't sync data across tabs
+};
+
 // Configure database for non-caching on client-side only
 if (typeof window !== 'undefined') {
   try {
+    // Add timestamp to database URL to prevent caching
     database.app.options.databaseURL = addTimestampToURL(database.app.options.databaseURL);
+    
+    // Apply additional settings if supported
+    if ((database as any).settings) {
+      (database as any).settings(dbConfig);
+    }
   } catch (error) {
-    console.warn("Could not add timestamp to database URL:", error);
+    console.warn("Could not configure database for real-time data:", error);
   }
 }
 
