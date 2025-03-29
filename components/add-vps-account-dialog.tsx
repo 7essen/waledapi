@@ -141,10 +141,11 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       }, 2000);
     } catch (error) {
       console.error("Error adding account:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
 
       toast({
         title: "Error",
-        description: `Failed to add VPS account: ${error.message}`,
+        description: `Failed to add VPS account: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
