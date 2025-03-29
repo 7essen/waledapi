@@ -25,6 +25,8 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
   const sshAccounts = accounts.filter((account) => account.type === "SSH");
   const vlessAccounts = accounts.filter((account) => account.type === "VLESS");
   const trojanAccounts = accounts.filter((account) => account.type === "TROJAN");
+  const socksAccounts = accounts.filter((account) => account.type === "SOCKS");
+  const shadowsocksAccounts = accounts.filter((account) => account.type === "SHADOWSOCKS");
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -41,6 +43,10 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
       case "VLESS":
         return <Server className="h-4 w-4" />
       case "TROJAN":
+        return <Server className="h-4 w-4" />
+      case "SOCKS":
+        return <Server className="h-4 w-4" />
+      case "SHADOWSOCKS":
         return <Server className="h-4 w-4" />
       default:
         return <Server className="h-4 w-4" />
@@ -98,6 +104,21 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
         </div>
 
         <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <span className="text-sm text-muted-foreground">Server Name</span>
+            <div className="flex items-center">
+              <span className="text-sm font-medium truncate">{account.server_name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 ml-1"
+                onClick={() => copyToClipboard(account.server_name, "Server Name")}
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
           {account.type === "SSH" && (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
@@ -147,7 +168,7 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
             </>
           )}
 
-          {(account.type === "VLESS" || account.type === "TROJAN") && (
+          {(account.type === "VLESS" || account.type === "TROJAN" || account.type === "SOCKS" || account.type === "SHADOWSOCKS") && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <span className="text-sm text-muted-foreground">Config</span>
               <div className="flex items-center">
@@ -209,6 +230,24 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
           <h2 className="text-xl sm:text-2xl font-semibold">Trojan Accounts</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {trojanAccounts.map(renderAccountCard)}
+          </div>
+        </div>
+      )}
+
+      {socksAccounts.length > 0 && (
+        <div className="space-y-4 mb-8">
+          <h2 className="text-xl sm:text-2xl font-semibold">SOCKS Accounts</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {socksAccounts.map(renderAccountCard)}
+          </div>
+        </div>
+      )}
+
+      {shadowsocksAccounts.length > 0 && (
+        <div className="space-y-4 mb-8">
+          <h2 className="text-xl sm:text-2xl font-semibold">Shadowsocks Accounts</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {shadowsocksAccounts.map(renderAccountCard)}
           </div>
         </div>
       )}

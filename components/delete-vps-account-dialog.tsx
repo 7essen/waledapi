@@ -84,6 +84,9 @@ export default function DeleteVpsAccountDialog({ account, open, onOpenChange }: 
             <div className="text-muted-foreground">Type:</div>
             <div>{account.type}</div>
 
+            <div className="text-muted-foreground">Server Name:</div>
+            <div>{account.server_name}</div>
+
             <div className="text-muted-foreground">IP Address:</div>
             <div>{account.ip_address}</div>
 

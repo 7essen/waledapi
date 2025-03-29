@@ -33,12 +33,25 @@ const firebaseConfig = {
 }
 
 const formSchema = z.object({
-  type: z.enum(["SSH", "VLESS", "TROJAN"]),
-  ip_address: z.string().min(1, "IP address is required"),
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-  expiry_date: z.string().min(1, "Expiry date is required"),
+  type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
+  server_name: z.string().min(1, "Server name is required"),
+  ip_address: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  expiry_date: z.string().optional(),
+  config: z.string().optional(),
   status: z.enum(["active", "inactive"]),
+}).refine(data => {
+  if (data.type === "SSH") {
+    return data.ip_address && data.username && data.password && data.expiry_date
+  }
+  if (data.type === "VLESS" || data.type === "TROJAN" || data.type === "SOCKS" || data.type === "SHADOWSOCKS") {
+    return data.config
+  }
+  return true
+}, {
+  message: "Required fields are missing based on the selected type",
+  path: ["ip_address", "username", "password", "expiry_date", "config"]
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -57,11 +70,13 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: account.type,
+      server_name: account.server_name,
       ip_address: account.ip_address,
       username: account.username,
       password: account.password,
       expiry_date: account.expiry_date,
       status: account.status,
+      config: account.config,
     },
   })
 
@@ -128,6 +143,8 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
                         <SelectItem value="SSH">SSH</SelectItem>
                         <SelectItem value="VLESS">VLESS</SelectItem>
                         <SelectItem value="TROJAN">TROJAN</SelectItem>
+                        <SelectItem value="SOCKS">SOCKS</SelectItem>
+                        <SelectItem value="SHADOWSOCKS">Shadowsocks</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -160,61 +177,95 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
 
             <FormField
               control={form.control}
-              name="ip_address"
+              name="server_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>IP Address</FormLabel>
+                  <FormLabel>Server Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="192.168.1.1" {...field} />
+                    <Input placeholder="My VPS Server" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            {form.watch("type") === "SSH" && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="ip_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>IP Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="192.168.1.1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="username" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="expiry_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expiry Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
+            {(form.watch("type") === "VLESS" || form.watch("type") === "TROJAN" || form.watch("type") === "SOCKS" || form.watch("type") === "SHADOWSOCKS") && (
               <FormField
                 control={form.control}
-                name="username"
+                name="config"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Config</FormLabel>
                     <FormControl>
-                      <Input placeholder="username" {...field} />
+                      <Input placeholder="Configuration URL" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="expiry_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expiry Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

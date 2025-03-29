@@ -32,7 +32,8 @@ const firebaseConfig = {
 }
 
 const formSchema = z.object({
-  type: z.enum(["SSH", "VLESS", "TROJAN"]),
+  type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
+  server_name: z.string().min(1, "Server name is required"),
   ip_address: z.string().optional(),
   username: z.string().optional(),
   password: z.string().optional(),
@@ -43,7 +44,7 @@ const formSchema = z.object({
   if (data.type === "SSH") {
     return data.ip_address && data.username && data.password && data.expiry_date
   }
-  if (data.type === "VLESS" || data.type === "TROJAN") {
+  if (data.type === "VLESS" || data.type === "TROJAN" || data.type === "SOCKS" || data.type === "SHADOWSOCKS") {
     return data.config
   }
   return true
@@ -70,6 +71,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "SSH",
+      server_name: "",
       ip_address: "",
       username: "",
       password: "",
@@ -194,6 +196,8 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
                             <SelectItem value="SSH">SSH</SelectItem>
                             <SelectItem value="VLESS">VLESS</SelectItem>
                             <SelectItem value="TROJAN">TROJAN</SelectItem>
+                            <SelectItem value="SOCKS">SOCKS</SelectItem>
+                            <SelectItem value="SHADOWSOCKS">Shadowsocks</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -223,6 +227,19 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
                   />
 
                 </div>
+                <FormField
+                  control={form.control}
+                  name="server_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Server Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="My VPS Server" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 {form.watch("type") === "SSH" && (
                   <>
                     <FormField
@@ -284,7 +301,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
                   </>
                 )}
 
-                {(form.watch("type") === "VLESS" || form.watch("type") === "TROJAN") && (
+                {(form.watch("type") === "VLESS" || form.watch("type") === "TROJAN" || form.watch("type") === "SOCKS" || form.watch("type") === "SHADOWSOCKS") && (
                   <FormField
                     control={form.control}
                     name="config"
