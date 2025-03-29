@@ -91,13 +91,26 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       // Use Realtime Database instead of Firestore
       const database = getDatabase(app);
 
-      // Create a new account object
-      const newAccount = {
-        ...values,
+      // Create a new account object with only the relevant fields
+      const newAccount: any = {
+        type: values.type,
+        server_name: values.server_name,
+        status: values.status,
         userId: userId || "anonymous",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
+
+      // Add fields based on account type
+      if (values.type === "SSH") {
+        newAccount.ip_address = values.ip_address;
+        newAccount.username = values.username;
+        newAccount.password = values.password;
+        newAccount.expiry_date = values.expiry_date;
+      } else {
+        // For VLESS, TROJAN, SOCKS, and Shadowsocks accounts
+        newAccount.config = values.config;
+      }
 
       // Write to Realtime Database
       const accountsRef = ref(database, "vpsAccounts");
@@ -126,7 +139,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         onOpenChange(false);
         setIsSuccess(false);
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error adding account:", error);
 
       toast({

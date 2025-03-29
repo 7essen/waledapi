@@ -165,6 +165,13 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
                   </Button>
                 </div>
               </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span className="text-sm text-muted-foreground">Expiry Date</span>
+                <div className="flex items-center">
+                  <span className="text-sm font-medium">{account.expiry_date}</span>
+                </div>
+              </div>
             </>
           )}
 
@@ -172,12 +179,12 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <span className="text-sm text-muted-foreground">Config</span>
               <div className="flex items-center">
-                <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">{account.config}</span>
+                <span className="text-sm font-medium truncate">{account.config}</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 ml-1"
-                  onClick={() => copyToClipboard(account.config ?? "", "Config")}
+                  onClick={() => copyToClipboard(account.config, "Config")}
                 >
                   <Copy className="h-3 w-3" />
                 </Button>

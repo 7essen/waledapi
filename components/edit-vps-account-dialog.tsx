@@ -71,12 +71,12 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
     defaultValues: {
       type: account.type,
       server_name: account.server_name,
-      ip_address: account.ip_address,
-      username: account.username,
-      password: account.password,
-      expiry_date: account.expiry_date,
+      ip_address: account.type === "SSH" ? account.ip_address : "",
+      username: account.type === "SSH" ? account.username : "",
+      password: account.type === "SSH" ? account.password : "",
+      expiry_date: account.type === "SSH" ? account.expiry_date : "",
       status: account.status,
-      config: account.config,
+      config: account.type !== "SSH" ? account.config : "",
     },
   })
 
@@ -93,10 +93,26 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
       // Reference to the specific account in Realtime Database
       const accountRef = ref(database, `vpsAccounts/${account.id}`)
 
-      await update(accountRef, {
+      // Clean up the data based on account type
+      const updateData = {
         ...values,
         updatedAt: Date.now(),
-      })
+      }
+
+      // Remove SSH-specific fields for non-SSH accounts
+      if (values.type !== "SSH") {
+        delete updateData.ip_address
+        delete updateData.username
+        delete updateData.password
+        delete updateData.expiry_date
+      }
+
+      // Remove config field for SSH accounts
+      if (values.type === "SSH") {
+        delete updateData.config
+      }
+
+      await update(accountRef, updateData)
 
       toast({
         title: "Account updated",
