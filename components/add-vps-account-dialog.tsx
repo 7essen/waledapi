@@ -103,13 +103,13 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
 
       // Add fields based on account type
       if (values.type === "SSH") {
-        newAccount.ip_address = values.ip_address;
-        newAccount.username = values.username;
-        newAccount.password = values.password;
-        newAccount.expiry_date = values.expiry_date;
+        if (values.ip_address) newAccount.ip_address = values.ip_address;
+        if (values.username) newAccount.username = values.username;
+        if (values.password) newAccount.password = values.password;
+        if (values.expiry_date) newAccount.expiry_date = values.expiry_date;
       } else {
         // For VLESS, TROJAN, SOCKS, and Shadowsocks accounts
-        newAccount.config = values.config;
+        if (values.config) newAccount.config = values.config;
       }
 
       // Write to Realtime Database
