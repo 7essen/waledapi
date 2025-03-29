@@ -89,14 +89,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">VPS Accounts</h1>
-          <div className="flex gap-2">
-            <Link href="/test">
-              <Button variant="outline">Test Firebase</Button>
+      <main className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">VPS Accounts</h1>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link href="/test" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">Test Firebase</Button>
             </Link>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Account
             </Button>
