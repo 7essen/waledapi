@@ -19,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, push, set } from "firebase/database"
+import { encryptAccount } from "@/lib/encryption"
 
 // Direct Firebase config
 const firebaseConfig = {
@@ -112,11 +113,14 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         if (values.config) newAccount.config = values.config;
       }
 
+      // Encrypt sensitive data
+      const encryptedAccount = encryptAccount(newAccount);
+
       // Write to Realtime Database
       const accountsRef = ref(database, "vpsAccounts");
       const newAccountRef = push(accountsRef);
 
-      await set(newAccountRef, newAccount);
+      await set(newAccountRef, encryptedAccount);
 
       const newAccountId = newAccountRef.key;
 

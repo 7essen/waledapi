@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { encryptAccount, decryptAccount } from "@/lib/encryption"
 
 // Direct Firebase config
 const firebaseConfig = {
@@ -94,7 +95,7 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
       const accountRef = ref(database, `vpsAccounts/${account.id}`)
 
       // Clean up the data based on account type
-      const updateData = {
+      const updateData: any = {
         ...values,
         updatedAt: Date.now(),
       }
@@ -112,7 +113,10 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
         delete updateData.config
       }
 
-      await update(accountRef, updateData)
+      // Encrypt sensitive data
+      const encryptedData = encryptAccount(updateData)
+
+      await update(accountRef, encryptedData)
 
       toast({
         title: "Account updated",
@@ -122,9 +126,11 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
       onOpenChange(false)
     } catch (error) {
       console.error("Error updating account:", error)
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
+
       toast({
         title: "Error",
-        description: "Failed to update VPS account. Please try again.",
+        description: `Failed to update VPS account: ${errorMessage}`,
         variant: "destructive",
       })
     } finally {
