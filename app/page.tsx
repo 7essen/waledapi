@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 // Direct Firebase config is no longer needed here
 
@@ -19,6 +23,10 @@ export default function Dashboard() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(true); // Add state for isLoggedIn
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
       const fetchAccounts = async () => {
@@ -47,6 +55,24 @@ export default function Dashboard() {
 
       fetchAccounts();
     }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      await signIn(email, password)
+      router.push("/dashboard")
+    } catch (error) {
+      toast({
+        title: "Authentication Error",
+        description: "Invalid credentials",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
