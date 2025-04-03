@@ -1,40 +1,60 @@
 import CryptoJS from 'crypto-js';
 
-const SECRET_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'your-secret-key-here';
+const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'your-very-secure-encryption-key-here';
 
-export const encrypt = (text: string): string => {
-  return CryptoJS.AES.encrypt(text, SECRET_KEY).toString();
-};
+export function encrypt(text: string): string {
+  try {
+    return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString();
+  } catch (error) {
+    console.error('Encryption error:', error);
+    return text;
+  }
+}
 
-export const decrypt = (ciphertext: string): string => {
-  const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
-  return bytes.toString(CryptoJS.enc.Utf8);
-};
+export function decrypt(ciphertext: string): string {
+  try {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return ciphertext;
+  }
+}
 
-export const encryptAccount = (account: any) => {
-  const encryptedAccount = { ...account };
-  
-  if (encryptedAccount.password) {
-    encryptedAccount.password = encrypt(encryptedAccount.password);
+export function encryptAccount(account: any): any {
+  try {
+    const encryptedAccount = { ...account };
+    
+    // Encrypt sensitive fields if they exist
+    if (account.password) {
+      encryptedAccount.password = encrypt(account.password);
+    }
+    if (account.config) {
+      encryptedAccount.config = encrypt(account.config);
+    }
+    
+    return encryptedAccount;
+  } catch (error) {
+    console.error('Account encryption error:', error);
+    return account;
   }
-  
-  if (encryptedAccount.config) {
-    encryptedAccount.config = encrypt(encryptedAccount.config);
-  }
-  
-  return encryptedAccount;
-};
+}
 
-export const decryptAccount = (account: any) => {
-  const decryptedAccount = { ...account };
-  
-  if (decryptedAccount.password) {
-    decryptedAccount.password = decrypt(decryptedAccount.password);
+export function decryptAccount(account: any): any {
+  try {
+    const decryptedAccount = { ...account };
+    
+    // Decrypt sensitive fields if they exist
+    if (account.password) {
+      decryptedAccount.password = decrypt(account.password);
+    }
+    if (account.config) {
+      decryptedAccount.config = decrypt(account.config);
+    }
+    
+    return decryptedAccount;
+  } catch (error) {
+    console.error('Account decryption error:', error);
+    return account;
   }
-  
-  if (decryptedAccount.config) {
-    decryptedAccount.config = decrypt(decryptedAccount.config);
-  }
-  
-  return decryptedAccount;
-}; 
+} 
