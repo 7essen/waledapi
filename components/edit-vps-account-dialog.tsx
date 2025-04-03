@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, update } from "firebase/database"
-import type { VpsAccount } from "@/lib/types"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { encryptAccount } from "@/lib/encryption"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,25 +14,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { encryptAccount, decryptAccount } from "@/lib/encryption"
+import { VpsAccount } from "@/lib/types"
+import { initializeApp } from "firebase/app"
+import { getDatabase, ref, update } from "firebase/database"
 
-// Direct Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDRNcrIOz8mUHRqQk4d_JUualOIIBc9w4E",
-  authDomain: "waledpro-f.firebaseapp.com",
-  databaseURL: "https://waledpro-f-default-rtdb.firebaseio.com",
-  projectId: "waledpro-f",
-  storageBucket: "waledpro-f.firebasestorage.app",
-  messagingSenderId: "289358660533",
-  appId: "1:289358660533:web:8cff3ff3a9759e6f990ffc",
-}
+// Initialize Firebase with environment variables
+const app = initializeApp({
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+})
+
+const database = getDatabase(app)
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
@@ -87,10 +102,6 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
     setIsSubmitting(true)
 
     try {
-      // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig)
-      const database = getDatabase(app)
-
       // Reference to the specific account in Realtime Database
       const accountRef = ref(database, `vpsAccounts/${account.id}`)
 
