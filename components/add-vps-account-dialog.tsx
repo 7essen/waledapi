@@ -17,20 +17,9 @@ import { useToast } from "@/components/ui/use-toast"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { encryptAccount, getFirebaseConfig } from "@/lib/encryption"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, push, set } from "firebase/database"
-import { encryptAccount } from "@/lib/encryption"
-
-// Direct Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDRNcrIOz8mUHRqQk4d_JUualOIIBc9w4E",
-  authDomain: "waledpro-f.firebaseapp.com",
-  databaseURL: "https://waledpro-f-default-rtdb.firebaseio.com",
-  projectId: "waledpro-f",
-  storageBucket: "waledpro-f.firebasestorage.app",
-  messagingSenderId: "289358660533",
-  appId: "1:289358660533:web:8cff3ff3a9759e6f990ffc",
-}
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
@@ -67,6 +56,9 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
 
+  // Initialize Firebase with decrypted configuration
+  const app = initializeApp(getFirebaseConfig());
+  const database = getDatabase(app);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,12 +78,6 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
     setIsSuccess(false);
 
     try {
-      // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig);
-
-      // Use Realtime Database instead of Firestore
-      const database = getDatabase(app);
-
       // Create a new account object with only the relevant fields
       const newAccount: any = {
         type: values.type,

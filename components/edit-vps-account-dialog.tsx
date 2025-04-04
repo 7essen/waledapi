@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { encryptAccount } from "@/lib/encryption"
+import { encryptAccount, getFirebaseConfig } from "@/lib/encryption"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,11 +32,12 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
 import { VpsAccount } from "@/lib/types"
+import { initializeApp } from "firebase/app"
 import { getDatabase, ref, update } from "firebase/database"
-import { useAuth } from "@/lib/auth"
 
-// Get database instance from auth module
-const database = getDatabase()
+// Initialize Firebase with environment variables
+const app = initializeApp(getFirebaseConfig());
+const database = getDatabase(app)
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),

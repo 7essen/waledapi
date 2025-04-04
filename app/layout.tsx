@@ -37,7 +37,7 @@ export default function RootLayout({
         >
           {isLoading ? null : (
             <>
-              {isLoggedIn && <DashboardHeader />}
+              {isLoggedIn && <DashboardHeader setIsLoggedIn={setIsLoggedIn} />}
               {isLoggedIn ? children : <LoginForm setIsLoggedIn={setIsLoggedIn} />}
             </>
           )}
