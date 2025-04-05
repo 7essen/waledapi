@@ -1,49 +1,58 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
-
-import { Dispatch, SetStateAction } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface Props {
-  setIsLoggedIn: Dispatch<SetStateAction<boolean>>;
+  setIsLoggedIn: (value: boolean) => void
 }
 
 export default function LoginForm({ setIsLoggedIn }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const { toast } = useToast();
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoading(true)
 
-    if (
-      (email === process.env.NEXT_PUBLIC_USERNAME || email === process.env.NEXT_PUBLIC_USERNAME + "@example.com") &&
-      password === process.env.NEXT_PUBLIC_PASSWORD
-    ) {
-      setIsLoggedIn(true);
-      router.push("/dashboard");
-    } else {
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(true);
+        router.push("/dashboard");
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Authentication Error",
+          description: errorData.message || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "Authentication Error",
-        description: "Invalid credentials",
+        description: error.message || "An error occurred during login",
         variant: "destructive",
       });
     }
 
-    setIsLoading(false);
-  };
+    setIsLoading(false)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -86,6 +95,6 @@ export default function LoginForm({ setIsLoggedIn }: Props) {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
 

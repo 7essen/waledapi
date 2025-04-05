@@ -25,9 +25,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
-import { ref, push } from "firebase/database"
+import { ref, push, set } from "firebase/database"
 import { database } from "@/lib/firebase"
-import { encryptAccount } from "@/lib/encryption"
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
@@ -72,7 +71,7 @@ export function AddVpsAccountDialog({ open, onOpenChange, userId, onAccountAdded
       ip_address: "",
       username: "",
       password: "",
-      expiry_date: undefined,
+      expiry_date: format(new Date(), 'yyyy-MM-dd'), // Default to today's date
       status: "active",
       config: ""
     },
@@ -98,22 +97,21 @@ export function AddVpsAccountDialog({ open, onOpenChange, userId, onAccountAdded
         if (values.ip_address) newAccount.ip_address = values.ip_address;
         if (values.username) newAccount.username = values.username;
         if (values.password) newAccount.password = values.password;
-        if (values.expiry_date) newAccount.expiry_date = values.expiry_date.toISOString();
+        if (values.expiry_date) newAccount.expiry_date = values.expiry_date; // Store as string
       } else {
         // For VLESS, TROJAN, SOCKS, and Shadowsocks accounts
         if (values.config) newAccount.config = values.config;
       }
 
-      // Encrypt sensitive data
-      const encryptedAccount = encryptAccount(newAccount);
 
-      // Write to Realtime Database
-      const accountsRef = ref(database, "vpsAccounts");
-      const newAccountRef = push(accountsRef);
+      console.log("Saving new account:", newAccount); // Log the object before saving
 
-      await push(ref(database, 'vps_accounts'), encryptedAccount);
+      // Write to Realtime Database using the generated key
+      const accountsRef = ref(database, "vpsAccounts"); // Use consistent path "vpsAccounts"
+      const newAccountRef = push(accountsRef); // Generate unique key and ref
+      await set(newAccountRef, newAccount); // Use set with the generated ref
 
-      const newAccountId = newAccountRef.key;
+      const newAccountId = newAccountRef.key; // Get the key from the ref used for set
 
       // Set success state
       setIsSuccess(true);

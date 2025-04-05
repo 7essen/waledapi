@@ -10,7 +10,6 @@ import { Edit, Trash2, Copy, Server } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import EditVpsAccountDialog from "@/components/edit-vps-account-dialog"
 import DeleteVpsAccountDialog from "@/components/delete-vps-account-dialog"
-import { decryptAccount } from "@/lib/encryption"
 
 interface VpsAccountsListProps {
   accounts: VpsAccount[]
@@ -84,7 +83,7 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
   }
 
   const renderAccountCard = (account: VpsAccount) => {
-    const decryptedAccount = decryptAccount(account);
+    const decryptedAccount = account;
     
     return (
       <Card
@@ -269,6 +268,7 @@ export default function VpsAccountsList({ accounts, isLoading, newAccountId }: V
           account={editAccount}
           open={true}
           onOpenChange={(open) => !open && setEditAccount(null)}
+          onAccountUpdated={() => {}}
         />
       )}
 

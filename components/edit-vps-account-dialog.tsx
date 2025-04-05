@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { encryptAccount } from "@/lib/encryption"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -111,10 +110,8 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange, onAc
         delete updateData.config
       }
 
-      // Encrypt sensitive data
-      const encryptedData = encryptAccount(updateData)
 
-      await update(accountRef, encryptedData)
+      await update(accountRef, updateData)
 
       toast("Account updated successfully", {
         description: "VPS account has been updated successfully.",
@@ -125,10 +122,7 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange, onAc
       console.error("Error updating account:", error)
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
 
-      toast("Error", {
-        description: `Failed to update VPS account: ${errorMessage}`,
-        variant: "destructive",
-      })
+      toast.error(`Failed to update VPS account: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
     }
