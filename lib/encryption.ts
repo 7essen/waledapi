@@ -1,6 +1,8 @@
 import CryptoJS from 'crypto-js';
 
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'your-very-secure-encryption-key-here';
+// IMPORTANT: Use a non-public environment variable for the encryption key
+// NEXT_PUBLIC_ prefix makes it available in the client, which is a security risk
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'your-very-secure-encryption-key-here';
 
 /**
  * Decrypts an environment variable if it's in the format 'iv:encrypted'

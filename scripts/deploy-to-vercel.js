@@ -105,8 +105,8 @@ const main = async () => {
   
   let vercelCommands = [];
   
-  // Add encryption key first
-  vercelCommands.push(`vercel env add NEXT_PUBLIC_ENCRYPTION_KEY production`);
+  // Add encryption key first (USE ENCRYPTION_KEY, NOT NEXT_PUBLIC_ENCRYPTION_KEY)
+  vercelCommands.push(`vercel env add ENCRYPTION_KEY production`);
   
   // Add all other encrypted variables
   for (const [key, value] of Object.entries(encryptedEnv)) {
@@ -139,12 +139,15 @@ const main = async () => {
   
   console.log(`\nEncrypted variables saved to ${outputFile}`);
   console.log(`\nIMPORTANT: When prompted in Vercel CLI, use these encrypted values from ${outputFile}`);
-  console.log('For the NEXT_PUBLIC_ENCRYPTION_KEY, use this value:');
+  console.log('For the ENCRYPTION_KEY, use this value:');
   console.log(encryptionKey);
+  
+  console.log('\nWARNING: NEVER use NEXT_PUBLIC_ prefix for sensitive information like encryption keys!');
+  console.log('This exposes them to the client/browser and is a major security risk.');
   
   console.log('\nHere is a quick copy-paste reference:');
   console.log('-----------------------------------');
-  console.log(`NEXT_PUBLIC_ENCRYPTION_KEY=${encryptionKey}`);
+  console.log(`ENCRYPTION_KEY=${encryptionKey}`);
   
   Object.entries(encryptedEnv).forEach(([key, value]) => {
     console.log(`${key}=${value}`);
