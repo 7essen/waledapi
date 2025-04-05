@@ -1,26 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, onValue } from "firebase/database"
+import { ref, onValue } from "firebase/database"
 import type { VpsAccount } from "@/lib/types"
 import VpsAccountsList from "@/components/vps-accounts-list"
-import AddVpsAccountDialog from "@/components/add-vps-account-dialog"
+import { AddVpsAccountDialog } from "@/components/add-vps-account-dialog"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import Link from "next/link"
-
-// Direct Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDRNcrIOz8mUHRqQk4d_JUualOIIBc9w4E",
-  authDomain: "waledpro-f.firebaseapp.com",
-  databaseURL: "https://waledpro-f-default-rtdb.firebaseio.com",
-  projectId: "waledpro-f",
-  storageBucket: "waledpro-f.firebasestorage.app",
-  messagingSenderId: "289358660533",
-  appId: "1:289358660533:web:8cff3ff3a9759e6f990ffc",
-}
+import { database } from "@/lib/firebase"
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
@@ -41,10 +30,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     try {
-      // Initialize Firebase directly
-      const app = initializeApp(firebaseConfig);
-      const database = getDatabase(app);
-
       // Reference to vpsAccounts in Realtime Database
       const accountsRef = ref(database, "vpsAccounts");
 

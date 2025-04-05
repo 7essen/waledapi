@@ -27,7 +27,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground`}>
+      <body className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -41,6 +41,7 @@ export default function RootLayout({
               {isLoggedIn ? children : <LoginForm setIsLoggedIn={setIsLoggedIn} />}
             </>
           )}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

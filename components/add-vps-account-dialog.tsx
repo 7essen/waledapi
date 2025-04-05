@@ -9,17 +9,25 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { encryptAccount, getFirebaseConfig } from "@/lib/encryption"
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, push, set } from "firebase/database"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { toast } from "sonner"
+import { ref, push } from "firebase/database"
+import { database } from "@/lib/firebase"
+import { encryptAccount } from "@/lib/encryption"
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
@@ -51,14 +59,10 @@ interface AddVpsAccountDialogProps {
   userId?: string
   onAccountAdded?: (accountId: string) => void
 }
-export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAccountAdded }: AddVpsAccountDialogProps) {
+
+export function AddVpsAccountDialog({ open, onOpenChange, userId, onAccountAdded }: AddVpsAccountDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
-
-  // Initialize Firebase with decrypted configuration
-  const app = initializeApp(getFirebaseConfig());
-  const database = getDatabase(app);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -68,12 +72,13 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       ip_address: "",
       username: "",
       password: "",
-      expiry_date: new Date().toISOString().split("T")[0],
+      expiry_date: undefined,
       status: "active",
       config: ""
     },
   });
-  const onSubmit = async (values: FormValues) => {
+
+  async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     setIsSuccess(false);
 
@@ -93,7 +98,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         if (values.ip_address) newAccount.ip_address = values.ip_address;
         if (values.username) newAccount.username = values.username;
         if (values.password) newAccount.password = values.password;
-        if (values.expiry_date) newAccount.expiry_date = values.expiry_date;
+        if (values.expiry_date) newAccount.expiry_date = values.expiry_date.toISOString();
       } else {
         // For VLESS, TROJAN, SOCKS, and Shadowsocks accounts
         if (values.config) newAccount.config = values.config;
@@ -106,7 +111,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       const accountsRef = ref(database, "vpsAccounts");
       const newAccountRef = push(accountsRef);
 
-      await set(newAccountRef, encryptedAccount);
+      await push(ref(database, 'vps_accounts'), encryptedAccount);
 
       const newAccountId = newAccountRef.key;
 
@@ -118,10 +123,7 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
         onAccountAdded(newAccountId);
       }
 
-      toast({
-        title: "Account added",
-        description: "VPS account has been added successfully.",
-      });
+      toast.success("Account added successfully");
 
       // Don't close the dialog immediately to show success state
       setTimeout(() => {
@@ -133,15 +135,13 @@ export default function AddVpsAccountDialog({ open, onOpenChange, userId, onAcco
       console.error("Error adding account:", error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
 
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: `Failed to add VPS account: ${errorMessage}`,
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Dialog

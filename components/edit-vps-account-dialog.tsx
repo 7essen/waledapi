@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { encryptAccount, getFirebaseConfig } from "@/lib/encryption"
+import { encryptAccount } from "@/lib/encryption"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -30,14 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
 import { VpsAccount } from "@/lib/types"
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, update } from "firebase/database"
-
-// Initialize Firebase with environment variables
-const app = initializeApp(getFirebaseConfig());
-const database = getDatabase(app)
+import { ref, update } from "firebase/database"
+import { database } from "@/lib/firebase"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   type: z.enum(["SSH", "VLESS", "TROJAN", "SOCKS", "SHADOWSOCKS"]),
@@ -67,17 +63,17 @@ interface EditVpsAccountDialogProps {
   account: VpsAccount
   open: boolean
   onOpenChange: (open: boolean) => void
+  onAccountUpdated: () => void
 }
 
-export default function EditVpsAccountDialog({ account, open, onOpenChange }: EditVpsAccountDialogProps) {
+export default function EditVpsAccountDialog({ account, open, onOpenChange, onAccountUpdated }: EditVpsAccountDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: account.type,
-      server_name: account.server_name,
+      type: account.type as "SSH" | "VLESS" | "TROJAN" | "SOCKS" | "SHADOWSOCKS",
+      server_name: account.server_name || "",
       ip_address: account.type === "SSH" ? account.ip_address : "",
       username: account.type === "SSH" ? account.username : "",
       password: account.type === "SSH" ? account.password : "",
@@ -120,18 +116,16 @@ export default function EditVpsAccountDialog({ account, open, onOpenChange }: Ed
 
       await update(accountRef, encryptedData)
 
-      toast({
-        title: "Account updated",
+      toast("Account updated successfully", {
         description: "VPS account has been updated successfully.",
       })
-
       onOpenChange(false)
+      onAccountUpdated()
     } catch (error) {
       console.error("Error updating account:", error)
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
 
-      toast({
-        title: "Error",
+      toast("Error", {
         description: `Failed to update VPS account: ${errorMessage}`,
         variant: "destructive",
       })
